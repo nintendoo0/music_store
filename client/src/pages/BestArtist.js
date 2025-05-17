@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import RecordingCard from '../components/RecordingCard';
 
 const BestArtist = () => {
   const [bestArtist, setBestArtist] = useState(null);
@@ -12,7 +13,7 @@ const BestArtist = () => {
     const fetchBestArtist = async () => {
       try {
         const response = await api.get('/api/artists/bestselling');
-        setBestArtist(response.data.bestsellingArtist);
+        setBestArtist(response.data.bestsellingArtist || null);
         setAllArtists(response.data.allArtistsBySales || []);
         setLoading(false);
       } catch (err) {
@@ -39,66 +40,61 @@ const BestArtist = () => {
     return <div className="alert alert-danger">{error}</div>;
   }
 
+  if (!bestArtist) {
+    return <div className="alert alert-warning">Данные о продажах отсутствуют</div>;
+  }
+
   return (
     <div>
-      <h1 className="mb-4">Исполнители по количеству продаж</h1>
+      <h1 className="mb-4">Лучший исполнитель по продажам</h1>
       
-      {!bestArtist ? (
-        <div className="alert alert-info">
-          Данные о продажах отсутствуют
+      <div className="card mb-4">
+        <div className="card-body">
+          <h2 className="card-title">{bestArtist.artist}</h2>
+          <h4 className="card-subtitle mb-2 text-muted">
+            Продано записей: {bestArtist.totalSales}
+          </h4>
         </div>
-      ) : (
-        <div className="row">
-          <div className="col-md-8">
-            <div className="card mb-4">
-              <div className="card-header bg-primary text-white">
-                <h2 className="card-title h4 mb-0">Лучший исполнитель</h2>
+      </div>
+      
+      {bestArtist.recordings && bestArtist.recordings.length > 0 && (
+        <div>
+          <h3 className="mb-3">Записи исполнителя</h3>
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            {bestArtist.recordings.map(recording => (
+              <div key={recording.id} className="col">
+                <RecordingCard recording={recording} />
               </div>
-              <div className="card-body">
-                <h3 className="h2 mb-3">{bestArtist.artist}</h3>
-                <p className="lead">Общее количество продаж: <strong>{bestArtist.totalSales}</strong></p>
-                
-                {bestArtist.recordings && bestArtist.recordings.length > 0 && (
-                  <div>
-                    <h4 className="h5">Записи исполнителя:</h4>
-                    <ul className="list-group">
-                      {bestArtist.recordings.map(recording => (
-                        <li key={recording.id} className="list-group-item d-flex justify-content-between align-items-center">
-                          <div>
-                            <Link to={`/recordings/${recording.id}`}>{recording.title}</Link>
-                            <span className="badge bg-secondary ms-2">{recording.genre}</span>
-                          </div>
-                          <span>{recording.releaseYear}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="col-md-4">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title h5 mb-0">Другие исполнители</h2>
-              </div>
-              <ul className="list-group list-group-flush">
-                {allArtists.map((artist, index) => (
-                  <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{artist.artist}</span>
-                    <span className="badge bg-primary rounded-pill">{artist.totalSales}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       )}
-      
+
+      <h3 className="mt-5 mb-3">Лучшие исполнители по продажам</h3>
+      <div className="table-responsive">
+        <table className="table table-striped">
+          <thead className="table-dark">
+            <tr>
+              <th>#</th>
+              <th>Исполнитель</th>
+              <th>Продажи</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allArtists.map((artist, index) => (
+              <tr key={index} className={artist.artist === bestArtist.artist ? 'table-success' : ''}>
+                <td>{index + 1}</td>
+                <td>{artist.artist}</td>
+                <td>{artist.totalSales}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <div className="mt-4">
-        <Link to="/bestsellers" className="btn btn-secondary me-2">
-          Назад к бестселлерам
+        <Link to="/" className="btn btn-secondary">
+          Назад на главную
         </Link>
       </div>
     </div>

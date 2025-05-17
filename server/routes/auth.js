@@ -1,71 +1,78 @@
 const express = require('express');
 const router = express.Router();
 const { User } = require('../models');
-const { generateToken } = require('../config/jwt');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { auth } = require('../middleware/auth');
-const sequelize = require('sequelize');
+const { Op } = require('sequelize');
+const { generateToken } = require('../config/jwt'); // Добавьте этот импорт
 
 // Регистрация нового пользователя
 router.post('/register', async (req, res) => {
   try {
+    console.log('Получены данные для регистрации:', req.body);
+    
     const { username, email, password, firstName, lastName } = req.body;
     
-    // Проверка на уникальность email и имени пользователя
+    // Проверка обязательных полей
+    if (!username || !email || !password) {
+      console.log('Отсутствуют обязательные поля');
+      return res.status(400).json({
+        message: 'Необходимо заполнить обязательные поля: username, email, password'
+      });
+    }
+    
+    // Проверка на уникальность
     const existingUser = await User.findOne({
       where: {
-        [sequelize.Op.or]: [
-          { email },
-          { username }
+        [Op.or]: [
+          { username },
+          { email }
         ]
       }
     });
     
     if (existingUser) {
+      console.log('Пользователь уже существует');
       return res.status(400).json({
         message: 'Пользователь с таким email или именем уже существует'
       });
     }
     
-    // Создание нового пользователя
+    // Создание пользователя
     const user = await User.create({
       username,
       email,
-      password, // пароль будет зашифрован через хук beforeCreate
-      firstName,
-      lastName,
-      role: 'user' // по умолчанию
+      password,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      role: 'user'
     });
     
     // Генерация JWT токена
-    const token = generateToken(user.id, user.role);
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET || 'your_jwt_secret_key',
+      { expiresIn: '24h' }
+    );
     
-    // Отправка токена в куки
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 1 день
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production'
-    });
-    
-    // Ответ без пароля
-    const userResponse = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role
-    };
-    
+    // Отправка ответа
     res.status(201).json({
       message: 'Пользователь успешно зарегистрирован',
-      user: userResponse,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      },
       token
     });
   } catch (error) {
-    console.error('Ошибка регистрации:', error);
-    res.status(400).json({
-      message: 'Ошибка при регистрации',
+    console.error('Ошибка при регистрации:', error);
+    res.status(500).json({
+      message: 'Ошибка при регистрации пользователя',
       error: error.message
     });
   }
@@ -79,7 +86,7 @@ router.post('/login', async (req, res) => {
     // Поиск пользователя по имени пользователя или email
     const user = await User.findOne({
       where: {
-        [sequelize.Op.or]: [
+        [Op.or]: [
           { username },
           { email: username }
         ]
@@ -100,7 +107,7 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // Генерация JWT токена
+    // Генерация JWT токена с использованием импортированной функции
     const token = generateToken(user.id, user.role);
     
     // Отправка токена в куки

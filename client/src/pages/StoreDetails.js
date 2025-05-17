@@ -12,6 +12,7 @@ const StoreDetails = () => {
     const fetchStoreDetails = async () => {
       try {
         const response = await api.get(`/api/stores/${id}`);
+        console.log('Данные, полученные с сервера:', response.data);
         setStore(response.data);
         setLoading(false);
       } catch (err) {
@@ -70,27 +71,32 @@ const StoreDetails = () => {
               </tr>
             </thead>
             <tbody>
-              {store.inventory.map(item => (
-                <tr key={item.recordingId}>
-                  <td>{item.recordingDetails.title}</td>
-                  <td>{item.recordingDetails.artist}</td>
-                  <td>{item.recordingDetails.mediaType}</td>
-                  <td>
-                    {item.inStock > 0 ? (
-                      <span className="badge bg-success">{item.inStock} шт.</span>
-                    ) : (
-                      <span className="badge bg-danger">Нет в наличии</span>
-                    )}
-                  </td>
-                  <td>{item.salesCount}</td>
-                  <td>{item.retailPrice} ₽</td>
-                  <td>
-                    <Link to={`/recordings/${item.recordingId}`} className="btn btn-sm btn-outline-primary">
-                      Подробнее
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {store.inventory.map(item => {
+                // Проверяем структуру данных, поддерживая оба варианта
+                const recording = item.recording || item.recordingDetails || {};
+                
+                return (
+                  <tr key={item.recordingId}>
+                    <td>{recording.title || 'Название отсутствует'}</td>
+                    <td>{recording.artist || 'Исполнитель не указан'}</td>
+                    <td>{recording.mediaType || item.mediaType || 'Не указан'}</td>
+                    <td>
+                      {item.inStock > 0 ? (
+                        <span className="badge bg-success">{item.inStock} шт.</span>
+                      ) : (
+                        <span className="badge bg-danger">Нет в наличии</span>
+                      )}
+                    </td>
+                    <td>{item.salesCount}</td>
+                    <td>{item.retailPrice || 'Не указана'} ₽</td>
+                    <td>
+                      <Link to={`/recordings/${item.recordingId}`} className="btn btn-sm btn-outline-primary">
+                        Подробнее
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

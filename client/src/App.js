@@ -1,50 +1,75 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { 
+  BrowserRouter as Router, 
+  Route, 
+  Routes 
+} from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 // Компоненты навигации
-import Header from './components/Header';
+import Navigation from './components/Navigation';
 import Footer from './components/Footer';
 
 // Страницы
 import Home from './pages/Home';
 import RecordingList from './pages/RecordingList';
 import RecordingDetails from './pages/RecordingDetails';
-import RecordingsByGenre from './pages/RecordingsByGenre';
-import BestSellers from './pages/BestSellers';
-import BestArtist from './pages/BestArtist';
+import EditRecording from './pages/EditRecording';
+import AddRecording from './pages/AddRecording';
+import NotFound from './pages/NotFound';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Forbidden from './pages/Forbidden';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+
+// Админ-страницы
+import AdminDashboard from './pages/admin/Dashboard'; 
+import UserManagement from './pages/admin/UserManagement';
+
+// Магазины
 import StoreList from './pages/StoreList';
 import StoreDetails from './pages/StoreDetails';
-import OutOfStock from './pages/OutOfStock';
-import TotalSales from './pages/TotalSales';
-import MaxMargin from './pages/MaxMargin';
-import AddRecording from './pages/AddRecording';
+import AddStore from './pages/AddStore';
 
 function App() {
   return (
-    <Router>
-      <div className="app-container">
-        <Header />
-        <main className="container mt-4">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/recordings" element={<RecordingList />} />
-            <Route path="/recordings/:id" element={<RecordingDetails />} />
-            <Route path="/recordings/genre/:genre" element={<RecordingsByGenre />} />
-            <Route path="/bestsellers" element={<BestSellers />} />
-            <Route path="/bestartist" element={<BestArtist />} />
-            <Route path="/stores" element={<StoreList />} />
-            <Route path="/stores/:id" element={<StoreDetails />} />
-            <Route path="/stores/:id/out-of-stock" element={<OutOfStock />} />
-            <Route path="/stores/:id/total-sales" element={<TotalSales />} />
-            <Route path="/max-margin" element={<MaxMargin />} />
-            <Route path="/add-recording" element={<AddRecording />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="d-flex flex-column min-vh-100">
+          <Navigation />
+          <main className="container flex-grow-1 py-4">
+            <Routes>
+              {/* Публичные маршруты */}
+              <Route path="/" element={<Home />} />
+              <Route path="/recordings" element={<RecordingList />} />
+              <Route path="/recordings/:id" element={<RecordingDetails />} />
+              
+              {/* Маршруты для магазинов */}
+              <Route path="/stores" element={<StoreList />} />
+              <Route path="/stores/:id" element={<StoreDetails />} />
+              
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Защищенные маршруты только для администраторов */}
+              <Route element={<ProtectedRoute adminOnly={true} />}>
+                <Route path="/recordings/add" element={<AddRecording />} />
+                <Route path="/recordings/edit/:id" element={<EditRecording />} />
+                <Route path="/stores/add" element={<AddStore />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<UserManagement />} />
+              </Route>
+              
+              <Route path="/forbidden" element={<Forbidden />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

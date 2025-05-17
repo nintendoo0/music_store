@@ -5,10 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const cookieParser = require('cookie-parser');
-const { sequelize, testDbConnection } = require('./config/db');
+const { sequelize, syncModels } = require('./config/db');
 const { Recording, Catalog, Store, StoreInventory, Order, User } = require('./models');
 const importData = require('./migrations/importData');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const storeRoutes = require('./routes/stores');
 const { auth, adminAuth } = require('./middleware/auth');
 require('dotenv').config();
 
@@ -729,6 +731,8 @@ app.post('/api/stores', async (req, res) => {
 
 // Добавьте маршруты авторизации
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/stores', storeRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
@@ -742,10 +746,10 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     // Тестируем подключение к БД
-    await testDbConnection();
+    await sequelize.authenticate();
     
     // Синхронизируем модели с базой данных
-    await sequelize.sync();
+    await syncModels();
     
     // Если в БД нет данных, импортируем их
     const recordingsCount = await Recording.count();
