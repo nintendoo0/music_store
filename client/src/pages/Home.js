@@ -106,6 +106,18 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+        <div className="col-md-4 mb-4">
+          <div className="card stats-card h-100">
+            <div className="card-body">
+              <h5 className="card-title">Каталог произведений</h5>
+              <p className="card-text">Просмотрите полный каталог музыкальных произведений</p>
+              <Link to="/catalog" className="btn btn-primary">
+                Перейти к каталогу
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

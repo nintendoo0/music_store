@@ -60,13 +60,48 @@ const upload = multer({
 
 // МАРШРУТЫ API
 
-// 1. Сведения о записях
+// API для получения всех записей с возможностью фильтрации по жанру
 app.get('/api/recordings', async (req, res) => {
   try {
-    const recordings = await Recording.findAll();
+    const { genre } = req.query;
+    
+    let whereClause = {};
+    
+    // Добавляем фильтр по жанру, если он указан
+    if (genre) {
+      whereClause.genre = genre;
+    }
+    
+    const recordings = await Recording.findAll({
+      where: whereClause,
+      order: [['title', 'ASC']]
+    });
+    
     res.json(recordings);
   } catch (error) {
     console.error('Ошибка при получении записей:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Важно: разместите этот маршрут ПЕРЕД маршрутом, который обрабатывает /api/recordings/:id
+
+const { Op } = require('sequelize');  // Добавьте этот импорт, если его еще нет
+
+// Добавьте новый маршрут для получения списка уникальных жанров
+// ВАЖНО: разместите этот маршрут ПЕРЕД маршрутом /api/recordings/:id
+app.get('/api/genres', async (req, res) => {
+  try {
+    // Используем raw query для получения уникальных жанров
+    const [genres] = await sequelize.query(`
+      SELECT DISTINCT genre FROM recordings 
+      WHERE genre IS NOT NULL AND genre != ''
+      ORDER BY genre ASC
+    `);
+    
+    res.json(genres.map(g => g.genre));
+  } catch (error) {
+    console.error('Ошибка при получении списка жанров:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
@@ -123,15 +158,24 @@ app.get('/api/recordings/:id', async (req, res) => {
   }
 });
 
-// 2. Сведения о произведениях (каталог)
+// API для получения данных каталога произведений
 app.get('/api/catalog', async (req, res) => {
   try {
     const catalogItems = await Catalog.findAll({
       include: [{
         model: Recording,
-        as: 'recording'
-      }]
+        as: 'recording',
+        attributes: ['id', 'title', 'artist', 'genre', 'releaseYear', 'publisher', 'mediaType', 'imageUrl']
+      }, {
+        model: Store,
+        as: 'store',
+        attributes: ['id', 'name', 'address', 'city']
+      }],
+      order: [
+        [sequelize.literal('"recording"."title"'), 'ASC']
+      ]
     });
+    
     res.json(catalogItems);
   } catch (error) {
     console.error('Ошибка при получении каталога:', error);

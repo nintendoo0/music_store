@@ -32,6 +32,7 @@ import UserManagement from './pages/admin/UserManagement';
 import StoreList from './pages/StoreList';
 import StoreDetails from './pages/StoreDetails';
 import AddStore from './pages/AddStore';
+import CatalogList from './pages/CatalogList';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/recordings" element={<RecordingList />} />
               <Route path="/recordings/:id" element={<RecordingDetails />} />
+              <Route path="/catalog" element={<CatalogList />} />
               
               {/* Маршруты для магазинов */}
               <Route path="/stores" element={<StoreList />} />

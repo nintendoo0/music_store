@@ -39,6 +39,11 @@ const Navigation = () => {
               </NavLink>
             </li>
             <li className="nav-item">
+              <NavLink className="nav-link" to="/catalog">
+                Каталог произведений
+              </NavLink>
+            </li>
+            <li className="nav-item">
               <NavLink className="nav-link" to="/stores">
                 Магазины
               </NavLink>
