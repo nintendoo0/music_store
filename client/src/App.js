@@ -36,6 +36,7 @@ import CatalogList from './pages/CatalogList';
 import Profile from './pages/Profile';
 import Cart from './pages/Cart';
 import OrderList from './pages/OrderList';
+import BestSellers from './pages/BestSellers';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
               {/* Публичные маршруты */}
               <Route path="/" element={<Home />} />
               <Route path="/recordings" element={<RecordingList />} />
+              <Route path="/recordings/bestsellers" element={<BestSellers />} />
               <Route path="/recordings/:id" element={<RecordingDetails />} />
               <Route path="/catalog" element={<CatalogList />} />
               

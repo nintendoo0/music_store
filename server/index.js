@@ -106,7 +106,33 @@ app.get('/api/genres', async (req, res) => {
   }
 });
 
-// Исправленный маршрут для получения деталей о записи
+// Сначала бестселлеры!
+app.get('/api/recordings/bestsellers', async (req, res) => {
+  try {
+    // Используем SQL запрос для агрегации данных о продажах
+    const [results] = await sequelize.query(`
+      SELECT 
+        r.id as "recordingId",
+        r.title,
+        r.artist,
+        r.genre,
+        SUM(si."salesCount") as "totalSales"
+      FROM store_inventory si
+      JOIN recordings r ON si."recordingId" = r.id
+      GROUP BY r.id, r.title, r.artist, r.genre
+      ORDER BY "totalSales" DESC
+    `);
+
+    res.json({
+      bestsellers: results
+    });
+  } catch (error) {
+    console.error('Ошибка при получении бестселлеров:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Потом запись по id!
 app.get('/api/recordings/:id', async (req, res) => {
   try {
     const recordingId = req.params.id;
