@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import api from '../services/api';
-import RecordingCard from '../components/RecordingCard';
 
 const RecordingList = () => {
   const [recordings, setRecordings] = useState([]);
@@ -13,6 +13,7 @@ const RecordingList = () => {
   const [genres, setGenres] = useState([]);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchRecordings = async () => {
@@ -152,6 +153,14 @@ const RecordingList = () => {
                       <Link to={`/recordings/${recording.id}`} className="btn btn-outline-primary">
                         Подробнее
                       </Link>
+                      <button className="btn btn-success" onClick={() => addToCart({
+                        recordingId: recording.id,
+                        title: recording.title,
+                        artist: recording.artist,
+                        price: recording.catalogInfo?.retailPrice || recording.retailPrice || 0
+                      })}>
+                        В корзину
+                      </button>
                     </div>
                   </div>
                 </div>

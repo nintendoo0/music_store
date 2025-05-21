@@ -6,7 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const cookieParser = require('cookie-parser');
 const { sequelize, syncModels } = require('./config/db');
-const { Recording, Catalog, Store, StoreInventory, Order, User } = require('./models');
+const { Recording, Catalog, Store, StoreInventory, Order, User, UserOrder, OrderItem } = require('./models');
 const importData = require('./migrations/importData');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -166,10 +166,6 @@ app.get('/api/catalog', async (req, res) => {
         model: Recording,
         as: 'recording',
         attributes: ['id', 'title', 'artist', 'genre', 'releaseYear', 'publisher', 'mediaType', 'imageUrl']
-      }, {
-        model: Store,
-        as: 'store',
-        attributes: ['id', 'name', 'address', 'city']
       }],
       order: [
         [sequelize.literal('"recording"."title"'), 'ASC']
@@ -813,3 +809,81 @@ const startServer = async () => {
 
 // Запуск сервера
 startServer();
+
+app.post('/api/orders', auth, async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const userId = req.user.id;
+    const { items, storeId } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Корзина пуста' });
+    }
+    if (!storeId) {
+      return res.status(400).json({ message: 'Не выбран магазин' });
+    }
+    // 1. Создаём заказ пользователя
+    const order = await UserOrder.create({
+      userId,
+      date: new Date(),
+      status: 'pending',
+      totalAmount: items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
+    }, { transaction });
+
+    // 2. Для каждой позиции создаём OrderItem и уменьшаем остаток в магазине
+    for (const item of items) {
+      await OrderItem.create({
+        orderId: order.id,
+        recordingId: item.recordingId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      }, { transaction });
+
+      // Уменьшаем остаток в магазине
+      const inventory = await StoreInventory.findOne({
+        where: { storeId, recordingId: item.recordingId }
+      });
+      if (inventory) {
+        inventory.inStock = Math.max(0, inventory.inStock - item.quantity);
+        await inventory.save({ transaction });
+      }
+    }
+
+    await transaction.commit();
+    res.status(201).json({ message: 'Заказ оформлен', orderId: order.id });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Ошибка при создании заказа:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+app.post('/api/store-inventory', async (req, res) => {
+  const { storeId, recordingIds } = req.body;
+  if (!storeId || !Array.isArray(recordingIds)) {
+    return res.status(400).json({ message: 'Некорректные параметры' });
+  }
+  const inventory = await StoreInventory.findAll({
+    where: {
+      storeId,
+      recordingId: recordingIds
+    }
+  });
+  res.json(
+    recordingIds.map(id => {
+      const found = inventory.find(i => i.recordingId === id);
+      return {
+        recordingId: id,
+        inStock: found ? found.inStock : 0
+      };
+    })
+  );
+});
+
+app.get('/api/my-orders', auth, async (req, res) => {
+  const userId = req.user.id;
+  const orders = await UserOrder.findAll({
+    where: { userId },
+    order: [['date', 'DESC']]
+  });
+  res.json(orders);
+});

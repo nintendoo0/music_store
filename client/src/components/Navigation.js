@@ -1,8 +1,10 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const Navigation = () => {
   const { currentUser, logout, isAdmin } = useAuth();
+  const { cart } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -133,6 +135,17 @@ const Navigation = () => {
                 <i className="bi bi-plus-lg"></i> Добавить запись
               </Link>
             )}
+
+            {/* Ссылка на корзину */}
+            <Link to="/cart" className="btn btn-outline-light position-relative ms-3">
+              <i className="bi bi-cart"></i>
+              {cart.length > 0 && (
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+              Корзина
+            </Link>
           </div>
         </div>
       </div>

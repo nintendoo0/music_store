@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom'; // Добавляем импорт Link
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import api from '../services/api';
 
 const RecordingDetails = () => {
@@ -11,6 +12,7 @@ const RecordingDetails = () => {
   const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false); // Будем использовать для отображения состояния удаления
   const { isAdmin } = useAuth();
+  const { addToCart } = useCart();
   
   useEffect(() => {
     const fetchRecording = async () => {
@@ -85,6 +87,9 @@ const RecordingDetails = () => {
   }
 
   const { title, artist, genre, subgenre, releaseYear, publisher, mediaType, imageUrl } = recording;
+
+  // Получаем наличие из записи
+  const stores = recording.availability || [];
 
   return (
     <div className="recording-details">
@@ -188,6 +193,34 @@ const RecordingDetails = () => {
                 >
                   <i className="bi bi-arrow-left me-1"></i> Назад к списку
                 </Link>
+                <button className="btn btn-success ms-auto" onClick={() => addToCart({
+                  recordingId: recording.id,
+                  title: recording.title,
+                  artist: recording.artist,
+                  price: recording.catalogInfo?.retailPrice || recording.retailPrice || 0
+                })}>
+                  В корзину
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <strong>Наличие в магазинах:</strong>
+                {stores.length === 0 ? (
+                  <div className="text-muted">Нет данных</div>
+                ) : (
+                  <ul className="list-unstyled mb-0">
+                    {stores.map(store => (
+                      <li key={store.storeId}>
+                        {store.storeName}:{" "}
+                        {store.inStock > 0 ? (
+                          <span className="text-success">{store.inStock} шт.</span>
+                        ) : (
+                          <span className="text-danger">Нет в наличии</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>

@@ -175,4 +175,38 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// Обновление профиля пользователя
+router.put('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    const { firstName, lastName, email, password } = req.body;
+
+    if (email) user.email = email;
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (password) user.password = password; // будет захеширован в хуке модели
+
+    await user.save();
+
+    res.json({
+      message: 'Профиль обновлен',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении профиля:', error);
+    res.status(500).json({ message: 'Ошибка при обновлении профиля', error: error.message });
+  }
+});
+
 module.exports = router;

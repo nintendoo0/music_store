@@ -14,6 +14,7 @@ const AddRecording = () => {
     mediaType: 'CD',
     imageUrl: ''
   });
+  const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -25,16 +26,45 @@ const AddRecording = () => {
     });
   };
 
+  // Новый обработчик для выбора файла
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setFormData({
+        ...formData,
+        imageUrl: file.name // Сохраняем имя файла для отправки на сервер
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      await api.post('/api/recordings', formData);
+      let imageUrl = formData.imageUrl;
+
+      // 1. Если выбран файл, сначала загружаем его на сервер
+      if (imageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append('image', imageFile);
+
+        const uploadRes = await api.post('/api/upload', imageFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = uploadRes.data.fileName;
+      }
+
+      // 2. Отправляем данные о записи, включая imageUrl (имя файла)
+      await api.post('/api/recordings', {
+        ...formData,
+        imageUrl: imageUrl || '', // если не было файла, отправляем как есть
+      });
+
       navigate('/recordings');
     } catch (err) {
-      console.error('Ошибка при добавлении записи:', err);
       setError(err.response?.data?.message || 'Ошибка при добавлении записи');
     } finally {
       setLoading(false);
@@ -151,7 +181,20 @@ const AddRecording = () => {
             </div>
 
             <div className="mb-3">
-              <label htmlFor="imageUrl" className="form-label">URL изображения</label>
+              <label htmlFor="image" className="form-label">Изображение (файл)</label>
+              <input
+                type="file"
+                className="form-control"
+                id="image"
+                name="image"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              <div className="form-text">Рекомендуемый размер: 300x300 пикселей. Допустимые форматы: JPG, PNG.</div>
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="imageUrl" className="form-label">URL изображения (необязательно)</label>
               <input
                 type="text"
                 className="form-control"
@@ -160,6 +203,7 @@ const AddRecording = () => {
                 value={formData.imageUrl}
                 onChange={handleChange}
                 placeholder="Оставьте пустым для изображения по умолчанию"
+                disabled={!!imageFile}
               />
             </div>
 

@@ -33,6 +33,9 @@ import StoreList from './pages/StoreList';
 import StoreDetails from './pages/StoreDetails';
 import AddStore from './pages/AddStore';
 import CatalogList from './pages/CatalogList';
+import Profile from './pages/Profile';
+import Cart from './pages/Cart';
+import OrderList from './pages/OrderList';
 
 function App() {
   return (
@@ -65,6 +68,9 @@ function App() {
               </Route>
               
               <Route path="/forbidden" element={<Forbidden />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/orders" element={<OrderList />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
