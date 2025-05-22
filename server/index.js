@@ -109,23 +109,23 @@ app.get('/api/genres', async (req, res) => {
 // Сначала бестселлеры!
 app.get('/api/recordings/bestsellers', async (req, res) => {
   try {
-    // Используем SQL запрос для агрегации данных о продажах
+    const limit = parseInt(req.query.limit) || 10;
     const [results] = await sequelize.query(`
       SELECT 
         r.id as "recordingId",
         r.title,
         r.artist,
         r.genre,
-        SUM(si."salesCount") as "totalSales"
-      FROM store_inventory si
-      JOIN recordings r ON si."recordingId" = r.id
+        COALESCE(SUM(oi.quantity), 0) as "totalSales"
+      FROM recordings r
+      LEFT JOIN order_items oi ON r.id = oi."recordingId"
       GROUP BY r.id, r.title, r.artist, r.genre
       ORDER BY "totalSales" DESC
-    `);
+      LIMIT :limit
+    `, { replacements: { limit }, type: sequelize.QueryTypes.SELECT });
 
-    res.json({
-      bestsellers: results
-    });
+    // Гарантируем, что bestsellers — всегда массив
+    res.json({ bestsellers: Array.isArray(results) ? results : results ? [results] : [] });
   } catch (error) {
     console.error('Ошибка при получении бестселлеров:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -295,232 +295,6 @@ app.get('/api/recordings/genre/:genre', async (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка при фильтрации по жанру:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
-  }
-});
-
-// 2. Получение списка самых продаваемых записей
-app.get('/api/recordings/bestsellers', async (req, res) => {
-  try {
-    // Используем SQL запрос для агрегации данных о продажах
-    const [results] = await sequelize.query(`
-      SELECT 
-        r.id as "recordingId",
-        r.title,
-        r.artist,
-        r.genre,
-        SUM(si."salesCount") as "totalSales"
-      FROM store_inventory si
-      JOIN recordings r ON si."recordingId" = r.id
-      GROUP BY r.id, r.title, r.artist, r.genre
-      ORDER BY "totalSales" DESC
-    `);
-
-    res.json({
-      bestsellers: results
-    });
-  } catch (error) {
-    console.error('Ошибка при получении бестселлеров:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
-  }
-});
-
-// 3. Исполнитель самых продаваемых произведений
-app.get('/api/artists/bestselling', async (req, res) => {
-  try {
-    // Используем SQL запрос для агрегации данных о продажах по артистам
-    const [artistSales] = await sequelize.query(`
-      SELECT 
-        r.artist,
-        SUM(si."salesCount") as "totalSales"
-      FROM store_inventory si
-      JOIN recordings r ON si."recordingId" = r.id
-      GROUP BY r.artist
-      ORDER BY "totalSales" DESC
-    `);
-
-    const bestArtist = artistSales.length > 0 ? artistSales[0] : null;
-
-    if (bestArtist) {
-      // Получаем все записи лучшего артиста
-      const artistRecordings = await Recording.findAll({
-        where: { artist: bestArtist.artist }
-      });
-
-      bestArtist.recordings = artistRecordings;
-    }
-
-    res.json({
-      bestsellingArtist: bestArtist,
-      allArtistsBySales: artistSales
-    });
-  } catch (error) {
-    console.error('Ошибка при получении лучшего исполнителя:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
-  }
-});
-
-// 4. Перечень отсутствующих в магазине записей
-app.get('/api/stores/:storeId/out-of-stock', async (req, res) => {
-  try {
-    const storeId = req.params.storeId;
-    const store = await Store.findByPk(storeId);
-
-    if (!store) {
-      return res.status(404).json({ message: 'Магазин не найден' });
-    }
-
-    // Находим записи с нулевым наличием
-    const outOfStockItems = await StoreInventory.findAll({
-      where: {
-        storeId: storeId,
-        inStock: 0
-      },
-      include: [{
-        model: Recording,
-        as: 'recording'
-      }]
-    });
-
-    // Форматируем результат
-    const formattedOutOfStock = outOfStockItems.map(item => ({
-      recordingId: item.recordingId,
-      title: item.recording.title,
-      artist: item.recording.artist,
-      genre: item.recording.genre,
-      salesCount: item.salesCount
-    }));
-
-    // Находим записи, которых вообще нет в инвентаре этого магазина
-    const storeInventoryIds = await StoreInventory.findAll({
-      attributes: ['recordingId'],
-      where: { storeId: storeId }
-    }).then(items => items.map(item => item.recordingId));
-
-    const missingRecordings = await Recording.findAll({
-      where: {
-        id: {
-          [sequelize.Op.notIn]: storeInventoryIds
-        }
-      }
-    });
-
-    const formattedMissing = missingRecordings.map(recording => ({
-      recordingId: recording.id,
-      title: recording.title,
-      artist: recording.artist,
-      genre: recording.genre,
-      status: 'missing'
-    }));
-
-    res.json({
-      storeId,
-      storeName: store.name,
-      outOfStock: formattedOutOfStock,
-      missingCompletely: formattedMissing,
-      allUnavailable: [...formattedOutOfStock, ...formattedMissing]
-    });
-  } catch (error) {
-    console.error('Ошибка при получении отсутствующих записей:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
-  }
-});
-
-// 5. Стоимость всех проданных записей
-app.get('/api/stores/:storeId/total-sales', async (req, res) => {
-  try {
-    const storeId = req.params.storeId;
-    const store = await Store.findByPk(storeId);
-
-    if (!store) {
-      return res.status(404).json({ message: 'Магазин не найден' });
-    }
-
-    // Получаем инвентарь с деталями записей
-    const inventory = await StoreInventory.findAll({
-      where: { storeId },
-      include: [{
-        model: Recording,
-        as: 'recording'
-      }]
-    });
-
-    let totalRetailSales = 0;
-    let totalWholesaleSales = 0;
-    let totalProfit = 0;
-    
-    // Получаем детали продаж
-    const salesDetails = await Promise.all(inventory.map(async (item) => {
-      const catalogItem = await Catalog.findOne({
-        where: { recordingId: item.recordingId }
-      });
-      
-      const retailPrice = catalogItem ? catalogItem.retailPrice : 0;
-      const retailSales = item.salesCount * retailPrice;
-      const wholesaleSales = item.salesCount * item.wholesalePrice;
-      const profit = retailSales - wholesaleSales;
-      
-      totalRetailSales += retailSales;
-      totalWholesaleSales += wholesaleSales;
-      totalProfit += profit;
-      
-      return {
-        recordingId: item.recordingId,
-        title: item.recording.title,
-        artist: item.recording.artist,
-        salesCount: item.salesCount,
-        retailPrice,
-        wholesalePrice: item.wholesalePrice,
-        retailSales,
-        wholesaleSales,
-        profit
-      };
-    }));
-    
-    res.json({
-      storeId,
-      storeName: store.name,
-      totalRetailSales,
-      totalWholesaleSales,
-      totalProfit,
-      salesDetails
-    });
-  } catch (error) {
-    console.error('Ошибка при подсчете стоимости продаж:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
-  }
-});
-
-// 6. Запись с максимальной разницей между розничной и оптовой ценой
-app.get('/api/recordings/max-margin', async (req, res) => {
-  try {
-    // Получаем все записи инвентаря с информацией о ценах из каталога
-    const [recordingsWithMargins] = await sequelize.query(`
-      SELECT 
-        r.id as "recordingId",
-        r.title,
-        r.artist,
-        c."retailPrice",
-        si."wholesalePrice",
-        (c."retailPrice" - si."wholesalePrice") as margin,
-        ((c."retailPrice" - si."wholesalePrice") / si."wholesalePrice" * 100) as "marginPercentage",
-        si."storeId",
-        s.name as "storeName"
-      FROM store_inventory si
-      JOIN recordings r ON si."recordingId" = r.id
-      JOIN catalog c ON r.id = c."recordingId"
-      JOIN stores s ON si."storeId" = s.id
-      ORDER BY margin DESC
-    `);
-    
-    const maxMarginRecording = recordingsWithMargins.length > 0 ? recordingsWithMargins[0] : null;
-    
-    res.json({
-      maxMarginRecording,
-      allRecordingsWithMargins: recordingsWithMargins
-    });
-  } catch (error) {
-    console.error('Ошибка при расчете максимальной маржи:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
@@ -906,10 +680,55 @@ app.post('/api/store-inventory', async (req, res) => {
 });
 
 app.get('/api/my-orders', auth, async (req, res) => {
-  const userId = req.user.id;
-  const orders = await UserOrder.findAll({
-    where: { userId },
-    order: [['date', 'DESC']]
-  });
-  res.json(orders);
+  try {
+    const userId = req.user.id;
+    const orders = await UserOrder.findAll({
+      where: { userId },
+      include: [
+        {
+          model: OrderItem,
+          as: 'OrderItems', // <-- обязательно!
+          include: [
+            {
+              model: Recording,
+              attributes: ['title']
+            }
+          ],
+          attributes: ['id', 'quantity', 'recordingId']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Ошибка при получении заказов:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await UserOrder.findAll({
+      where: { userId: req.user.id }, // если есть авторизация
+      include: [
+        {
+          model: OrderItem,
+          include: [
+            {
+              model: Recording,
+              attributes: ['title']
+            }
+          ],
+          attributes: ['quantity']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Ошибка при получении заказов:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
 });

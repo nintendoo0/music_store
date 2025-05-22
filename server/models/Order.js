@@ -25,6 +25,14 @@ const Order = sequelize.define('Order', {
       key: 'id'
     }
   },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,

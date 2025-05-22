@@ -33,9 +33,18 @@ const OrderList = () => {
             {orders.map(order => (
               <tr key={order.id}>
                 <td>{order.id}</td>
-                <td>{new Date(order.date).toLocaleString()}</td>
+                <td>{new Date(order.createdAt).toLocaleString()}</td>
                 <td>{order.status}</td>
                 <td>{order.totalAmount} ₽</td>
+                <td>
+                  <ul>
+                    {(order.OrderItems || []).map(item => (
+                      <li key={item.id}>
+                        {item.Recording.title} — {item.quantity} шт.
+                      </li>
+                    ))}
+                  </ul>
+                </td>
               </tr>
             ))}
           </tbody>

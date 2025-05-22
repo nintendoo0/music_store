@@ -8,19 +8,17 @@ const BestSellers = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchBestsellers = async () => {
-      try {
-        const response = await api.get('/api/recordings/bestsellers');
-        setBestsellers(response.data.bestsellers || []);
+    api.get('/api/recordings/bestsellers')
+      .then(res => {
+        setBestsellers(Array.isArray(res.data.bestsellers) ? res.data.bestsellers : []);
         setLoading(false);
-      } catch (err) {
+        setError(null); // сбрасываем ошибку при успешной загрузке
+      })
+      .catch(() => {
+        setBestsellers([]);
+        setLoading(false);
         setError('Ошибка при загрузке данных о бестселлерах.');
-        setLoading(false);
-        console.error(err);
-      }
-    };
-
-    fetchBestsellers();
+      });
   }, []);
 
   if (loading) {
