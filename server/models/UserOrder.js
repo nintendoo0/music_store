@@ -7,7 +7,15 @@ const UserOrder = sequelize.define('UserOrder', {
   userId: { type: DataTypes.INTEGER, allowNull: false, references: { model: User, key: 'id' } },
   date: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   status: { type: DataTypes.ENUM('pending', 'completed', 'cancelled'), allowNull: false, defaultValue: 'pending' },
-  totalAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false }
+  totalAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+  storeId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'stores',
+      key: 'id'
+    }
+  }
 }, {
   tableName: 'user_orders',
   timestamps: true

@@ -245,13 +245,24 @@ app.get('/api/stores/:id', async (req, res) => {
         where: { recordingId: item.recordingId }
       });
 
+      // Считаем реальные продажи по order_items для этого магазина и записи
+      const [result] = await sequelize.query(
+        `SELECT SUM(oi.quantity) as sum
+         FROM order_items oi
+         JOIN user_orders uo ON oi."orderId" = uo.id
+         WHERE oi."recordingId" = :recordingId AND uo."storeId" = :storeId`,
+        { replacements: { recordingId: item.recordingId, storeId }, type: sequelize.QueryTypes.SELECT }
+      );
+
+      const sales = result.sum || 0;
+
       return {
         recordingId: item.recordingId,
         wholesalePrice: item.wholesalePrice,
         retailPrice: catalogItem ? catalogItem.retailPrice : null,
-        salesCount: item.salesCount,
+        salesCount: sales, // теперь salesCount — это реальные продажи!
         inStock: item.inStock,
-        recording: item.recording // Добавляем данные о записи
+        recording: item.recording
       };
     }));
 
@@ -624,6 +635,7 @@ app.post('/api/orders', auth, async (req, res) => {
     // 1. Создаём заказ пользователя
     const order = await UserOrder.create({
       userId,
+      storeId, // обязательно!
       date: new Date(),
       status: 'pending',
       totalAmount: items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
@@ -729,6 +741,43 @@ app.get('/api/orders', async (req, res) => {
     res.json(orders);
   } catch (error) {
     console.error('Ошибка при получении заказов:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Пример для Sequelize:
+app.get('/api/store-inventory/:id', async (req, res) => {
+  try {
+    const inventory = await StoreInventory.findAll({
+      where: { storeId: req.params.id },
+      include: [
+        {
+          model: Recording,
+          attributes: ['title', 'artist', 'mediaType', 'retailPrice']
+        }
+      ]
+    });
+
+    const inventoryWithSales = await Promise.all(
+      inventory.map(async item => {
+        // Считаем продажи по order_items для этого магазина и записи
+        const sales = await OrderItem.sum('quantity', {
+          include: [{
+            model: UserOrder, // или Order, если используете другую модель
+            where: { storeId: req.params.id }
+          }],
+          where: { recordingId: item.recordingId }
+        });
+        return {
+          ...item.toJSON(),
+          sold: sales || 0
+        };
+      })
+    );
+
+    res.json(inventoryWithSales);
+  } catch (error) {
+    console.error('Ошибка при получении инвентаря магазина:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

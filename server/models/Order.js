@@ -11,9 +11,9 @@ const Order = sequelize.define('Order', {
   },
   storeId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: false, // или true, если разрешаете NULL
     references: {
-      model: Store,
+      model: 'stores',
       key: 'id'
     }
   },
