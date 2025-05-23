@@ -40,6 +40,7 @@ import OrderList from './pages/OrderList';
 import BestSellers from './pages/BestSellers';
 import BestsellingArtists from './pages/BestsellingArtists';
 import OutOfStock from './pages/OutOfStock';
+import MaxMargin from './pages/MaxMargin';
 
 function App() {
   return (
@@ -79,6 +80,7 @@ function App() {
               <Route path="/orders" element={<OrderList />} />
               <Route path="/artists/bestselling" element={<BestsellingArtists />} />
               <Route path="/out-of-stock" element={<OutOfStock />} />
+              <Route path="/analysis/max-margin" element={<MaxMargin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

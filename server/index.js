@@ -876,3 +876,55 @@ app.get('/api/out-of-stock', auth, adminAuth, async (req, res) => {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
+
+app.get('/api/analysis/max-margin', auth, adminAuth, async (req, res) => {
+  try {
+    // Запрос для максимальной маржи
+    const [result] = await sequelize.query(`
+      SELECT
+        r.id as "recordingId",
+        r.title,
+        r.artist,
+        r.genre,
+        c."retailPrice",
+        si."wholesalePrice",
+        (c."retailPrice" - si."wholesalePrice") as margin,
+        s.id as "storeId",
+        s.name as "storeName"
+      FROM recordings r
+      JOIN catalog c ON r.id = c."recordingId"
+      JOIN (
+        SELECT "recordingId", MIN("wholesalePrice") as minWholesale
+        FROM store_inventory
+        GROUP BY "recordingId"
+      ) min_si ON r.id = min_si."recordingId"
+      JOIN store_inventory si ON si."recordingId" = min_si."recordingId" AND si."wholesalePrice" = min_si.minWholesale
+      JOIN stores s ON si."storeId" = s.id
+      WHERE c."retailPrice" IS NOT NULL AND si."wholesalePrice" IS NOT NULL
+      ORDER BY margin DESC
+      LIMIT 1
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    // Запрос для средней маржи по всем записям
+    const [avg] = await sequelize.query(`
+      SELECT AVG(margin) as "avgMargin" FROM (
+        SELECT 
+          c."retailPrice" - si."wholesalePrice" as margin
+        FROM recordings r
+        JOIN catalog c ON r.id = c."recordingId"
+        JOIN (
+          SELECT "recordingId", MIN("wholesalePrice") as minWholesale
+          FROM store_inventory
+          GROUP BY "recordingId"
+        ) min_si ON r.id = min_si."recordingId"
+        JOIN store_inventory si ON si."recordingId" = min_si."recordingId" AND si."wholesalePrice" = min_si.minWholesale
+        WHERE c."retailPrice" IS NOT NULL AND si."wholesalePrice" IS NOT NULL
+      ) t
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    res.json({ maxMargin: result, avgMargin: avg.avgMargin });
+  } catch (error) {
+    console.error('Ошибка при анализе маржи:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
