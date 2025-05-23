@@ -109,23 +109,22 @@ app.get('/api/genres', async (req, res) => {
 // Сначала бестселлеры!
 app.get('/api/recordings/bestsellers', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const [results] = await sequelize.query(`
+    const limit = parseInt(req.query.limit) || 5;
+    const results = await sequelize.query(`
       SELECT 
         r.id as "recordingId",
         r.title,
         r.artist,
         r.genre,
-        COALESCE(SUM(oi.quantity), 0) as "totalSales"
+        COALESCE(SUM(CAST(oi.quantity AS INTEGER)), 0) as "totalSales"
       FROM recordings r
-      LEFT JOIN order_items oi ON r.id = oi."recordingId"
+      JOIN order_items oi ON r.id = oi."recordingId"
       GROUP BY r.id, r.title, r.artist, r.genre
       ORDER BY "totalSales" DESC
       LIMIT :limit
     `, { replacements: { limit }, type: sequelize.QueryTypes.SELECT });
 
-    // Гарантируем, что bestsellers — всегда массив
-    res.json({ bestsellers: Array.isArray(results) ? results : results ? [results] : [] });
+    res.json({ bestsellers: results });
   } catch (error) {
     console.error('Ошибка при получении бестселлеров:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
