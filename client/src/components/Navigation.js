@@ -146,6 +146,11 @@ const Navigation = () => {
               )}
               Корзина
             </Link>
+
+            {/* Ссылка на управление группами */}
+            <Link to="/groups/manage" className="btn btn-outline-primary">
+              Управление группами
+            </Link>
           </div>
         </div>
       </div>

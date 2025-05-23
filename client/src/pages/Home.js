@@ -12,8 +12,8 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const response = await api.get('/api/recordings');
-        // Возьмем только 4 записи для отображения
-        setRecordings(response.data.slice(0, 4));
+        const items = (response.data.recordings || []).slice(0, 10);
+        setRecordings(items);
         setLoading(false);
       } catch (err) {
         setError('Произошла ошибка при загрузке данных');

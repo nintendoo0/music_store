@@ -61,25 +61,13 @@ const upload = multer({
 // МАРШРУТЫ API
 
 // API для получения всех записей с возможностью фильтрации по жанру
-app.get('/api/recordings', async (req, res) => {
+app.get('/api/recordings', auth, adminAuth, async (req, res) => {
   try {
-    const { genre } = req.query;
-    
-    let whereClause = {};
-    
-    // Добавляем фильтр по жанру, если он указан
-    if (genre) {
-      whereClause.genre = genre;
-    }
-    
-    const recordings = await Recording.findAll({
-      where: whereClause,
-      order: [['title', 'ASC']]
-    });
-    
-    res.json(recordings);
+    const [recordings] = await sequelize.query(
+      `SELECT id, title, artist, "imageUrl" FROM recordings ORDER BY title`
+    );
+    res.json({ recordings });
   } catch (error) {
-    console.error('Ошибка при получении записей:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
@@ -925,6 +913,77 @@ app.get('/api/analysis/max-margin', auth, adminAuth, async (req, res) => {
     res.json({ maxMargin: result, avgMargin: avg.avgMargin });
   } catch (error) {
     console.error('Ошибка при анализе маржи:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Добавить песню в группу
+app.post('/api/groups/:groupId/recordings', auth, adminAuth, async (req, res) => {
+  const { groupId } = req.params;
+  const { recordingId } = req.body;
+  try {
+    await sequelize.query(
+      `INSERT INTO group_recordings (group_id, recording_id) VALUES (:groupId, :recordingId) ON CONFLICT DO NOTHING`,
+      { replacements: { groupId, recordingId } }
+    );
+    res.json({ message: 'Песня добавлена в группу' });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Удалить песню из группы
+app.delete('/api/groups/:groupId/recordings/:recordingId', auth, adminAuth, async (req, res) => {
+  const { groupId, recordingId } = req.params;
+  try {
+    await sequelize.query(
+      `DELETE FROM group_recordings WHERE group_id = :groupId AND recording_id = :recordingId`,
+      { replacements: { groupId, recordingId } }
+    );
+    res.json({ message: 'Песня удалена из группы' });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Создание группы
+app.post('/api/groups', auth, adminAuth, async (req, res) => {
+  const { name, description } = req.body;
+  try {
+    const [group] = await sequelize.query(
+      `INSERT INTO groups (name, description) VALUES (:name, :description) RETURNING *`,
+      { replacements: { name, description }, type: sequelize.QueryTypes.INSERT }
+    );
+    res.json({ group: group[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+app.get('/api/groups', auth, adminAuth, async (req, res) => {
+  try {
+    const [groups] = await sequelize.query(
+      `SELECT id, name, description FROM groups ORDER BY name`
+    );
+    res.json({ groups });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Получить список песен в группе
+app.get('/api/groups/:groupId/recordings', auth, adminAuth, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const [recordings] = await sequelize.query(
+      `SELECT r.id, r.title, r.artist
+       FROM group_recordings gr
+       JOIN recordings r ON gr.recording_id = r.id
+       WHERE gr.group_id = :groupId`,
+      { replacements: { groupId } }
+    );
+    res.json({ recordings });
+  } catch (error) {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

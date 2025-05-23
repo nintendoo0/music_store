@@ -20,11 +20,12 @@ const RecordingList = () => {
       try {
         setLoading(true);
         const response = await api.get('/api/recordings');
-        setRecordings(response.data);
+        const recordings = response.data.recordings || [];
+        setRecordings(recordings);
         
         // Извлекаем уникальные жанры из полученных записей
         const uniqueGenres = [...new Set(
-          response.data
+          recordings
             .map(recording => recording.genre)
             .filter(genre => genre && genre.trim() !== '')
         )].sort();
@@ -42,7 +43,7 @@ const RecordingList = () => {
   }, []);
 
   // Фильтрация записей по поисковому запросу и жанру
-  const filteredRecordings = recordings.filter(recording => {
+  const filteredRecordings = (Array.isArray(recordings) ? recordings : []).filter(recording => {
     const matchesSearch = 
       recording.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       recording.artist?.toLowerCase().includes(searchTerm.toLowerCase()) ||
