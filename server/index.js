@@ -780,3 +780,46 @@ app.get('/api/store-inventory/:id', async (req, res) => {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
+
+app.get('/api/admin/reports/sales', async (req, res) => {
+  try {
+    const results = await sequelize.query(`
+      SELECT 
+        r.id as "recordingId",
+        r.title,
+        r.artist,
+        r.genre,
+        COALESCE(SUM(CAST(oi.quantity AS INTEGER)), 0) as "totalSales",
+        COALESCE(SUM(CAST(oi.quantity AS INTEGER) * CAST(oi."unitPrice" AS NUMERIC)), 0) as "totalRevenue"
+      FROM recordings r
+      JOIN order_items oi ON r.id = oi."recordingId"
+      GROUP BY r.id, r.title, r.artist, r.genre
+      ORDER BY "totalSales" DESC
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    res.json({ sales: results });
+  } catch (error) {
+    console.error('Ошибка при получении отчёта о продажах:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+app.get('/api/artists/bestselling', async (req, res) => {
+  try {
+    const results = await sequelize.query(`
+      SELECT 
+        r.artist,
+        COALESCE(SUM(CAST(oi.quantity AS INTEGER)), 0) as "totalSales"
+      FROM recordings r
+      JOIN order_items oi ON r.id = oi."recordingId"
+      GROUP BY r.artist
+      ORDER BY "totalSales" DESC
+      LIMIT 10
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    res.json({ artists: results });
+  } catch (error) {
+    console.error('Ошибка при получении рейтинга исполнителей:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});

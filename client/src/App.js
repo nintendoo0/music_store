@@ -27,6 +27,7 @@ import { AuthProvider } from './context/AuthContext';
 // Админ-страницы
 import AdminDashboard from './pages/admin/Dashboard'; 
 import UserManagement from './pages/admin/UserManagement';
+import AdminReports from './pages/AdminReports';
 
 // Магазины
 import StoreList from './pages/StoreList';
@@ -37,6 +38,7 @@ import Profile from './pages/Profile';
 import Cart from './pages/Cart';
 import OrderList from './pages/OrderList';
 import BestSellers from './pages/BestSellers';
+import BestsellingArtists from './pages/BestsellingArtists';
 
 function App() {
   return (
@@ -67,12 +69,14 @@ function App() {
                 <Route path="/stores/add" element={<AddStore />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<UserManagement />} />
+                <Route path="/admin/reports" element={<AdminReports />} />
               </Route>
               
               <Route path="/forbidden" element={<Forbidden />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<OrderList />} />
+              <Route path="/artists/bestselling" element={<BestsellingArtists />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
