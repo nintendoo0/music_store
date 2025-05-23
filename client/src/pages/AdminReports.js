@@ -1,37 +1,61 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-
 
 const AdminReports = () => {
   const [sales, setSales] = useState([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  useEffect(() => {
-    fetch('/api/admin/reports/sales')
+  const fetchData = () => {
+    setLoading(true);
+    let url = `/api/admin/reports/sales?`;
+    if (dateFrom) url += `dateFrom=${dateFrom}&`;
+    if (dateTo) url += `dateTo=${dateTo}&`;
+
+    const token = localStorage.getItem('token');
+    fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(data => {
         setSales(data.sales || []);
+        setTotalRevenue(data.totalRevenue || 0);
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line
   }, []);
+
+  const handleFilter = (e) => {
+    e.preventDefault();
+    fetchData();
+  };
 
   if (loading) return <div>Загрузка...</div>;
 
   return (
     <div className="container py-4">
       <h1>Статистика продаж</h1>
-      <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={sales.slice(0, 10)}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="title" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="totalSales" fill="#8884d8" name="Продано" />
-          <Bar dataKey="totalRevenue" fill="#82ca9d" name="Выручка" />
-        </BarChart>
-      </ResponsiveContainer>
+      <form className="mb-3" onSubmit={handleFilter}>
+        <label>
+          С:
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+        </label>
+        <label className="ms-3">
+          По:
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+        </label>
+        <button type="submit" className="btn btn-primary ms-3">Показать</button>
+      </form>
+      <div className="mb-3">
+        <strong>Общая выручка за период: </strong>
+        {Number(totalRevenue).toLocaleString()} ₽
+      </div>
       <table className="table">
         <thead>
           <tr>

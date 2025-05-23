@@ -781,8 +781,27 @@ app.get('/api/store-inventory/:id', async (req, res) => {
   }
 });
 
-app.get('/api/admin/reports/sales', async (req, res) => {
+app.get('/api/admin/reports/sales', auth, adminAuth, async (req, res) => {
   try {
+    const { dateFrom, dateTo } = req.query;
+    let dateFilter = '';
+    let replacements = { dateFrom, dateTo };
+
+    if (dateFrom && dateTo) {
+      // Прибавляем 1 день к конечной дате
+      const dateToPlus1 = new Date(dateTo);
+      dateToPlus1.setDate(dateToPlus1.getDate() + 1);
+      replacements.dateToPlus1 = dateToPlus1.toISOString().slice(0, 10);
+      dateFilter = `AND uo."date" >= :dateFrom AND uo."date" < :dateToPlus1`;
+    } else if (dateFrom) {
+      dateFilter = `AND uo."date" >= :dateFrom`;
+    } else if (dateTo) {
+      const dateToPlus1 = new Date(dateTo);
+      dateToPlus1.setDate(dateToPlus1.getDate() + 1);
+      replacements.dateToPlus1 = dateToPlus1.toISOString().slice(0, 10);
+      dateFilter = `AND uo."date" < :dateToPlus1`;
+    }
+
     const results = await sequelize.query(`
       SELECT 
         r.id as "recordingId",
@@ -793,11 +812,20 @@ app.get('/api/admin/reports/sales', async (req, res) => {
         COALESCE(SUM(CAST(oi.quantity AS INTEGER) * CAST(oi."unitPrice" AS NUMERIC)), 0) as "totalRevenue"
       FROM recordings r
       JOIN order_items oi ON r.id = oi."recordingId"
+      JOIN user_orders uo ON oi."orderId" = uo.id
+      WHERE 1=1
+      ${dateFilter}
       GROUP BY r.id, r.title, r.artist, r.genre
       ORDER BY "totalSales" DESC
-    `, { type: sequelize.QueryTypes.SELECT });
+    `, {
+      replacements,
+      type: sequelize.QueryTypes.SELECT
+    });
 
-    res.json({ sales: results });
+    // Общая сумма по всем записям
+    const totalRevenue = results.reduce((sum, rec) => sum + Number(rec.totalRevenue), 0);
+
+    res.json({ sales: results, totalRevenue });
   } catch (error) {
     console.error('Ошибка при получении отчёта о продажах:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
