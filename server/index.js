@@ -823,3 +823,28 @@ app.get('/api/artists/bestselling', async (req, res) => {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
+
+// Маршрут для отсутствующих записей в магазинах (только для администратора)
+app.get('/api/out-of-stock', auth, adminAuth, async (req, res) => {
+  try {
+    const results = await sequelize.query(`
+      SELECT 
+        s.id as "storeId",
+        s.name as "storeName",
+        r.id as "recordingId",
+        r.title,
+        r.artist,
+        si."inStock"
+      FROM stores s
+      JOIN store_inventory si ON s.id = si."storeId"
+      JOIN recordings r ON si."recordingId" = r.id
+      WHERE si."inStock" = 0
+      ORDER BY s.name, r.title
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    res.json({ outOfStock: results });
+  } catch (error) {
+    console.error('Ошибка при получении отсутствующих записей:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});

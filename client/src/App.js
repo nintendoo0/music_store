@@ -39,6 +39,7 @@ import Cart from './pages/Cart';
 import OrderList from './pages/OrderList';
 import BestSellers from './pages/BestSellers';
 import BestsellingArtists from './pages/BestsellingArtists';
+import OutOfStock from './pages/OutOfStock';
 
 function App() {
   return (
@@ -77,6 +78,7 @@ function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<OrderList />} />
               <Route path="/artists/bestselling" element={<BestsellingArtists />} />
+              <Route path="/out-of-stock" element={<OutOfStock />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

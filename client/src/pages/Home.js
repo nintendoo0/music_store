@@ -63,7 +63,7 @@ const Home = () => {
       </div>
 
       <div className="row mt-5">
-        <div className="col-md-4 mb-4">
+        {/* <div className="col-md-4 mb-4">
           <div className="card stats-card h-100">
             <div className="card-body">
               <h5 className="card-title">Популярные жанры</h5>
@@ -81,14 +81,14 @@ const Home = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="col-md-4 mb-4">
           <div className="card stats-card h-100">
             <div className="card-body">
               <h5 className="card-title">Бестселлеры</h5>
               <p className="card-text">Узнайте, какие записи пользуются наибольшей популярностью</p>
-              <Link to="/bestsellers" className="btn btn-primary">
+              <Link to="/recordings/bestsellers" className="btn btn-primary">
                 Подробнее
               </Link>
             </div>

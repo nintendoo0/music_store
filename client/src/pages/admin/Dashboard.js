@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate} from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
@@ -141,6 +141,10 @@ const AdminDashboard = () => {
                 <button className="btn btn-info" onClick={() => navigate('/admin/reports')}>
                   <i className="bi bi-graph-up me-2"></i>
                   Отчеты
+                </button>
+                <button className="btn btn-warning" onClick={() => navigate('/out-of-stock')}>
+                  <i className="admin-actions mt-4"></i>
+                  Отсутствующие записи
                 </button>
               </div>
             </div>
