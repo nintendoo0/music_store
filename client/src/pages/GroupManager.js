@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const GroupManager = () => {
   const [groups, setGroups] = useState([]);
@@ -63,6 +64,11 @@ const GroupManager = () => {
 
   return (
     <div className="container py-4">
+      <div className="mb-3 d-flex justify-content-end">
+        <Link to="/groups/create" className="btn btn-success">
+          Создать группу
+        </Link>
+      </div>
       <h2>Управление группами песен</h2>
       <div className="mb-3">
         <label>Выберите группу:</label>

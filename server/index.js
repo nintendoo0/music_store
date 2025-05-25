@@ -61,7 +61,7 @@ const upload = multer({
 // МАРШРУТЫ API
 
 // API для получения всех записей с возможностью фильтрации по жанру
-app.get('/api/recordings', auth, adminAuth, async (req, res) => {
+app.get('/api/recordings', async (req, res) => {
   try {
     const [recordings] = await sequelize.query(
       `SELECT id, title, artist, "imageUrl" FROM recordings ORDER BY title`

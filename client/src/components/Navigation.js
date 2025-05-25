@@ -31,11 +31,6 @@ const Navigation = () => {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
-              <NavLink className="nav-link" to="/">
-                Главная
-              </NavLink>
-            </li>
-            <li className="nav-item">
               <NavLink className="nav-link" to="/recordings">
                 Каталог записей
               </NavLink>
@@ -136,7 +131,7 @@ const Navigation = () => {
               </Link>
             )}
 
-            {/* Ссылка на корзину */}
+            {currentUser && (
             <Link to="/cart" className="btn btn-outline-light position-relative ms-3">
               <i className="bi bi-cart"></i>
               {cart.length > 0 && (
@@ -146,11 +141,13 @@ const Navigation = () => {
               )}
               Корзина
             </Link>
+            )}
 
-            {/* Ссылка на управление группами */}
-            <Link to="/groups/manage" className="btn btn-outline-primary">
-              Управление группами
+            {currentUser && (
+            <Link to="/groups/manage" className="btn btn-outline-primary position-relative ms-3">
+              Группы
             </Link>
+            )}
           </div>
         </div>
       </div>
