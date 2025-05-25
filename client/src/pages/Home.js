@@ -41,15 +41,11 @@ const Home = () => {
 
   return (
     <div>
-      <div className="jumbotron bg-light p-5 mb-4 rounded">
-        <h1 className="display-4">Добро пожаловать в музыкальный магазин!</h1>
-        <p className="lead">
-          У нас представлен широкий выбор музыкальных записей различных жанров и исполнителей
-        </p>
-        <hr className="my-4" />
-        <p>Просмотрите наш каталог и найдите любимую музыку</p>
-        <Link to="/recordings" className="btn btn-primary btn-lg">
-          Перейти к каталогу
+      <div className="home-banner text-center text-white py-5">
+        <h1>Добро пожаловать в Музыкальный магазин!</h1>
+        <p>Лучший выбор музыкальных записей для вас.</p>
+        <Link to="/catalog" className="btn btn-primary btn-lg mt-3">
+          Перейти в каталог
         </Link>
       </div>
 

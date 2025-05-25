@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const Footer = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Показываем футер с задержкой для анимации
+    setTimeout(() => setIsVisible(true), 100);
+  }, []);
+
   return (
-    <footer className="footer mt-auto py-3 bg-dark text-white">
+    <footer className={`footer ${isVisible ? 'visible' : ''}`}>
       <div className="container">
-        <div className="row">
-          <div className="col-md-6">
-            <h5>Музыкальный магазин</h5>
-            <p>Лучший выбор музыкальных записей</p>
-          </div>
-          <div className="col-md-6 text-md-end">
-            <p>&copy; {new Date().getFullYear()} Музыкальный магазин. Все права защищены</p>
-          </div>
-        </div>
+        <p>&copy; {new Date().getFullYear()} Музыкальный магазин. Все права защищены.</p>
+        <p>
+          <a href="/about">О нас</a> | <a href="/contact">Контакты</a>
+        </p>
       </div>
     </footer>
   );
