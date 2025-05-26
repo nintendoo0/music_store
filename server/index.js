@@ -6,11 +6,12 @@ const path = require('path');
 const multer = require('multer');
 const cookieParser = require('cookie-parser');
 const { sequelize, syncModels } = require('./config/db');
-const { Recording, Catalog, Store, StoreInventory, Order, User, UserOrder, OrderItem } = require('./models');
+const { Recording, Catalog, Store, StoreInventory, Order, User, UserOrder, OrderItem, Group } = require('./models');
 const importData = require('./migrations/importData');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const storeRoutes = require('./routes/stores');
+const groupRoutes = require('./routes/groups');
 const { auth, adminAuth } = require('./middleware/auth');
 require('dotenv').config();
 
@@ -571,6 +572,7 @@ app.post('/api/stores', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stores', storeRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

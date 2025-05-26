@@ -144,7 +144,7 @@ const Navigation = () => {
             )}
 
             {currentUser && (
-            <Link to="/groups/manage" className="btn btn-outline-primary position-relative ms-3">
+            <Link to="/groups/manage" className="btn btn-outline-light position-relative ms-3">
               Группы
             </Link>
             )}

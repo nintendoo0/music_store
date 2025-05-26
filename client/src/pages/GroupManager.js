@@ -13,7 +13,7 @@ const GroupManager = () => {
   useEffect(() => {
     fetch('/api/groups', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
-      .then(data => setGroups(data.groups || []));
+      .then(data => setGroups(data || []));
     fetch('/api/recordings', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setAllRecordings(data.recordings || []));
@@ -78,8 +78,8 @@ const GroupManager = () => {
           onChange={e => setSelectedGroup(e.target.value)}
         >
           <option value="">-- Не выбрано --</option>
-          {groups.map(g => (
-            <option key={g.id} value={g.id}>{g.name}</option>
+          {groups.map(group => (
+            <option key={group.id} value={group.id}>{group.name}</option>
           ))}
         </select>
       </div>
