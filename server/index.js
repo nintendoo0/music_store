@@ -65,7 +65,7 @@ const upload = multer({
 app.get('/api/recordings', async (req, res) => {
   try {
     const [recordings] = await sequelize.query(
-      `SELECT id, title, artist, "imageUrl" FROM recordings ORDER BY title`
+      `SELECT id, title, artist, "imageUrl", genre FROM recordings ORDER BY title`
     );
     res.json({ recordings });
   } catch (error) {

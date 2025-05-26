@@ -43,11 +43,12 @@ const AdminReports = () => {
       <h1>Статистика продаж</h1>
       <form className="mb-3" onSubmit={handleFilter}>
         <label>
-          С:
+          С:  
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
         </label>
-        <label className="ms-3">
-          По:
+        <label className="ms-4">
+          По:  
+          
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
         </label>
         <button type="submit" className="btn btn-primary ms-3">Показать</button>

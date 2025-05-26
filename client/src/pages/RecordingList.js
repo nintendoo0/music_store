@@ -154,6 +154,7 @@ const RecordingList = () => {
                       <Link to={`/recordings/${recording.id}`} className="btn btn-outline-primary">
                         Подробнее
                       </Link>
+                      ㅤ
                       <button className="btn btn-success" onClick={() => addToCart({
                         recordingId: recording.id,
                         title: recording.title,
